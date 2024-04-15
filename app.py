@@ -2,14 +2,24 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from xgboost import XGBClassifier
+import pickle
 from sklearn.preprocessing import LabelEncoder
 
 # Load the trained XGBoost model
-xgb_model = XGBClassifier()
-xgb_model.load_model('')
+#xgb_model = XGBClassifier()
 
+model = pickle.load(open('xgb_model.pkl', 'rb'))
 # Function to preprocess the user input
-def preprocess_input(input_data): 
+# Function to preprocess the user input
+def preprocess_input(input_data):
+    # Define categorical variables within the function scope
+    categorical_variables = ['sex','on thyroxine', 'query on thyroxine', 'on antithyroid medication:', 
+                             'sick', 'pregnant', 'thyroid surgery', 'I131 treatment', 
+                             'query hypothyroid', 'query hyperthyroid', 'lithium', 
+                             'goitre', 'tumor', 'hypopituitary', 'psych', 
+                             'T3 measured', 'TT4 measured', 'T4u measured', 'FTI measurred', 
+                             'TBG measured']
+
     # Convert categorical variables to binary encoding
     for var in categorical_variables:
         input_data[var] = input_data[var].apply(lambda x: 1 if x == 'Yes' else 0)
@@ -20,6 +30,7 @@ def preprocess_input(input_data):
         input_data[var] = le.fit_transform(input_data[var])
     
     return input_data
+
 
 # Streamlit app
 def main():
@@ -39,6 +50,7 @@ def main():
 
     # Categorical variables
     st.sidebar.subheader('Categorical Variables')
+    sex = st.sidebar.radio('sex',['F','M'])
     on_thyroxine = st.sidebar.radio('On Thyroxine', ['Yes', 'No'])
     query_on_thyroxine = st.sidebar.radio('Query On Thyroxine', ['Yes', 'No'])
     on_antithyroid_medication = st.sidebar.radio('On Antithyroid Medication', ['Yes', 'No'])
@@ -62,13 +74,13 @@ def main():
 
     # Create a DataFrame with user input features
     input_data = pd.DataFrame({
-        'age': [age], 'TSH': [tsh], 'T3': [t3], 'TT4': [tt4], 'T4U': [t4u], 'FTI': [fti],
+        'age': [age],'sex':[sex] , 'TSH': [tsh], 'T3': [t3], 'TT4': [tt4], 'T4U': [t4u], 'FTI': [fti],
         'on thyroxine': [on_thyroxine], 'query on thyroxine': [query_on_thyroxine],
         'on antithyroid medication:': [on_antithyroid_medication], 'sick': [sick],
         'pregnant': [pregnant], 'thyroid surgery': [thyroid_surgery], 'I131 treatment': [i131_treatment],
         'query hypothyroid': [query_hypothyroid], 'query hyperthyroid': [query_hyperthyroid],
         'lithium': [lithium], 'goitre': [goitre], 'tumor': [tumor], 'hypopituitary': [hypopituitary],
-        'psych': [psych], 'TSH measured': [tsh_measured], 'T3 measured': [t3_measured],
+        'psych': [psych], 'T3 measured': [t3_measured],
         'TT4 measured': [tt4_measured], 'T4u measured': [t4u_measured],
         'FTI measurred': [fti_measured], 'TBG measured': [tbg_measured]
     })
@@ -81,7 +93,7 @@ def main():
     st.write(input_data_processed)
 
     # Make prediction
-    prediction = xgb_model.predict(input_data_processed)
+    prediction = model.predict(input_data_processed)
     st.subheader('Prediction')
     st.write(prediction)
 
